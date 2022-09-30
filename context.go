@@ -5,18 +5,14 @@ import (
 	"sync"
 )
 
-type ctxKey struct{}
-
-type IncrFunc func()
+type IncrFunc func() uint64
 
 func WithCount(parent context.Context, limit uint64) (context.Context, IncrFunc) {
 	ctx, cancel := context.WithCancel(parent)
 
 	var c uint64
-	ctx = context.WithValue(ctx, ctxKey{}, &c)
-
 	var mu sync.Mutex
-	return ctx, func() {
+	return ctx, func() uint64 {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -24,14 +20,7 @@ func WithCount(parent context.Context, limit uint64) (context.Context, IncrFunc)
 		if c > limit {
 			cancel()
 		}
-	}
-}
 
-func FromContext(ctx context.Context) (uint64, bool) {
-	val := ctx.Value(ctxKey{})
-	c, ok := val.(*uint64)
-	if !ok {
-		return 0, false
+		return c
 	}
-	return *c, true
 }

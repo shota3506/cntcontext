@@ -12,35 +12,28 @@ func TestWithCount(t *testing.T) {
 	ctx, incr := WithCount(parent, limit)
 
 	for i := uint64(0); i < limit; i++ {
-		incr()
+		want := i + 1
+
+		count := incr()
+		if count != want {
+			t.Errorf("FromContext == %d want %d", count, want)
+		}
+
 		select {
 		case err := <-ctx.Done():
 			t.Errorf("<-ctx.Done() == %v", err)
 		default:
 		}
-
-		count, ok := FromContext(ctx)
-		if !ok {
-			t.Error("FromContext should return true")
-		}
-		want := i + 1
-		if count != want {
-			t.Errorf("FromContext == %d want %d", count, want)
-		}
 	}
 
-	incr()
+	count := incr()
+	if count != 3 {
+		t.Errorf("FromContext == %d want 3", count)
+	}
+
 	select {
 	case <-ctx.Done():
 	default:
 		t.Error("<-ctx.Done() blocked, but shouldn't have")
-	}
-
-	count, ok := FromContext(ctx)
-	if !ok {
-		t.Error("FromContext should return true")
-	}
-	if count != 3 {
-		t.Errorf("FromContext == %d want 3", count)
 	}
 }
